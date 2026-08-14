@@ -17,19 +17,46 @@
       zoom: 17
     });
 
-    var markers = [];
+    var buildingMarkers = [];
+    var myLocationMarker = null;
+
+    function postToApp(message) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify(message));
+      }
+    }
 
     function renderBuildings(buildings) {
-      markers.forEach(function (m) { m.setMap(null); });
-      markers = [];
+      buildingMarkers.forEach(function (m) { m.setMap(null); });
+      buildingMarkers = [];
       buildings.forEach(function (b) {
         var marker = new naver.maps.Marker({
           position: new naver.maps.LatLng(b.lat, b.lng),
           map: map,
           title: b.name
         });
-        markers.push(marker);
+        naver.maps.Event.addListener(marker, 'click', function () {
+          postToApp({ type: 'buildingClick', building: b });
+        });
+        buildingMarkers.push(marker);
       });
+    }
+
+    function renderMyLocation(loc) {
+      var position = new naver.maps.LatLng(loc.lat, loc.lng);
+      if (myLocationMarker) {
+        myLocationMarker.setPosition(position);
+      } else {
+        myLocationMarker = new naver.maps.Marker({
+          position: position,
+          map: map,
+          icon: {
+            content: '<div style="width:16px;height:16px;border-radius:8px;background:#2b7de9;border:3px solid white;box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>',
+            anchor: new naver.maps.Point(8, 8)
+          },
+          zIndex: 100
+        });
+      }
     }
 
     function handleMessage(event) {
@@ -37,6 +64,8 @@
         var data = JSON.parse(event.data);
         if (data.type === 'buildings') {
           renderBuildings(data.buildings);
+        } else if (data.type === 'location') {
+          renderMyLocation(data);
         }
       } catch (e) {
         // ignore malformed messages
