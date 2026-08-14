@@ -19,6 +19,7 @@
 
     var buildingMarkers = [];
     var myLocationMarker = null;
+    var routePolyline = null;
 
     function postToApp(message) {
       if (window.ReactNativeWebView) {
@@ -59,6 +60,21 @@
       }
     }
 
+    function renderRoute(points) {
+      if (routePolyline) {
+        routePolyline.setMap(null);
+        routePolyline = null;
+      }
+      if (!points || points.length < 2) return;
+      routePolyline = new naver.maps.Polyline({
+        map: map,
+        path: points.map(function (p) { return new naver.maps.LatLng(p.lat, p.lng); }),
+        strokeColor: '#2b7de9',
+        strokeWeight: 5,
+        strokeOpacity: 0.9
+      });
+    }
+
     function handleMessage(event) {
       try {
         var data = JSON.parse(event.data);
@@ -66,6 +82,8 @@
           renderBuildings(data.buildings);
         } else if (data.type === 'location') {
           renderMyLocation(data);
+        } else if (data.type === 'route') {
+          renderRoute(data.points);
         }
       } catch (e) {
         // ignore malformed messages
