@@ -6,37 +6,6 @@
   <style>
     html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; }
   </style>
-  <script>
-    (function () {
-      var origOpen = XMLHttpRequest.prototype.open;
-      XMLHttpRequest.prototype.open = function (method, url) {
-        console.log('XHR:', method, url);
-        return origOpen.apply(this, arguments);
-      };
-      var origFetch = window.fetch;
-      if (origFetch) {
-        window.fetch = function (url) {
-          console.log('FETCH:', url);
-          return origFetch.apply(this, arguments);
-        };
-      }
-      ['HTMLScriptElement', 'HTMLImageElement'].forEach(function (ctorName) {
-        var proto = window[ctorName] && window[ctorName].prototype;
-        if (!proto) return;
-        var desc = Object.getOwnPropertyDescriptor(proto, 'src') ||
-          Object.getOwnPropertyDescriptor(Element.prototype, 'src');
-        if (!desc || !desc.set) return;
-        Object.defineProperty(proto, 'src', {
-          get: desc.get,
-          set: function (v) {
-            console.log(ctorName + '.src =', v);
-            return desc.set.call(this, v);
-          },
-          configurable: true
-        });
-      });
-    })();
-  </script>
   <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=x2ia0bht2o"></script>
 </head>
 <body>
