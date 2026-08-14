@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; }
+  </style>
+  <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=x2ia0bht2o"></script>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    // TODO: 우송대학교 서캠퍼스 실제 중심 좌표로 조정하세요.
+    var map = new naver.maps.Map('map', {
+      center: new naver.maps.LatLng(36.3249, 127.4162),
+      zoom: 17
+    });
+
+    var markers = [];
+
+    function renderBuildings(buildings) {
+      markers.forEach(function (m) { m.setMap(null); });
+      markers = [];
+      buildings.forEach(function (b) {
+        var marker = new naver.maps.Marker({
+          position: new naver.maps.LatLng(b.lat, b.lng),
+          map: map,
+          title: b.name
+        });
+        markers.push(marker);
+      });
+    }
+
+    function handleMessage(event) {
+      try {
+        var data = JSON.parse(event.data);
+        if (data.type === 'buildings') {
+          renderBuildings(data.buildings);
+        }
+      } catch (e) {
+        // ignore malformed messages
+      }
+    }
+
+    // Android WebView는 document로, iOS는 window로 메시지를 보낸다.
+    document.addEventListener('message', handleMessage);
+    window.addEventListener('message', handleMessage);
+  </script>
+</body>
+</html>
