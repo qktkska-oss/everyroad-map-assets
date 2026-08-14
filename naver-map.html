@@ -20,6 +20,21 @@
           return origFetch.apply(this, arguments);
         };
       }
+      ['HTMLScriptElement', 'HTMLImageElement'].forEach(function (ctorName) {
+        var proto = window[ctorName] && window[ctorName].prototype;
+        if (!proto) return;
+        var desc = Object.getOwnPropertyDescriptor(proto, 'src') ||
+          Object.getOwnPropertyDescriptor(Element.prototype, 'src');
+        if (!desc || !desc.set) return;
+        Object.defineProperty(proto, 'src', {
+          get: desc.get,
+          set: function (v) {
+            console.log(ctorName + '.src =', v);
+            return desc.set.call(this, v);
+          },
+          configurable: true
+        });
+      });
     })();
   </script>
   <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=x2ia0bht2o"></script>
