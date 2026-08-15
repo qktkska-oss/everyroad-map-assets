@@ -88,6 +88,8 @@
           renderBuildings(data.buildings);
         } else if (data.type === 'location') {
           renderMyLocation(data);
+        } else if (data.type === 'centerOnLocation') {
+          map.setCenter(new naver.maps.LatLng(data.lat, data.lng));
         } else if (data.type === 'route') {
           renderRoute(data.points);
         }
