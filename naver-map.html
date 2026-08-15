@@ -20,6 +20,7 @@
     var buildingMarkers = [];
     var myLocationMarker = null;
     var routePolyline = null;
+    var hasCenteredOnMyLocation = false;
 
     function postToApp(message) {
       if (window.ReactNativeWebView) {
@@ -57,6 +58,11 @@
           },
           zIndex: 100
         });
+      }
+
+      if (!hasCenteredOnMyLocation) {
+        hasCenteredOnMyLocation = true;
+        map.setCenter(position);
       }
     }
 
