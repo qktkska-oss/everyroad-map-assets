@@ -86,7 +86,7 @@
       }
     }
 
-    function renderRoute(points) {
+    function renderRoute(points, color) {
       if (routePolyline) {
         routePolyline.setMap(null);
         routePolyline = null;
@@ -95,7 +95,7 @@
       routePolyline = new naver.maps.Polyline({
         map: map,
         path: points.map(function (p) { return new naver.maps.LatLng(p.lat, p.lng); }),
-        strokeColor: '#2b7de9',
+        strokeColor: color || '#2b7de9',
         strokeWeight: 5,
         strokeOpacity: 0.9
       });
@@ -113,7 +113,7 @@
         } else if (data.type === 'centerOnLocation') {
           map.setCenter(new naver.maps.LatLng(data.lat, data.lng));
         } else if (data.type === 'route') {
-          renderRoute(data.points);
+          renderRoute(data.points, data.color);
         }
       } catch (e) {
         // ignore malformed messages
