@@ -21,6 +21,16 @@
     var myLocationMarker = null;
     var routePolyline = null;
     var hasCenteredOnMyLocation = false;
+    var currentHeading = 0;
+
+    function myLocationIconHtml(heading) {
+      return '' +
+        '<div style="position:relative;width:44px;height:44px;transform:rotate(' + heading + 'deg);transform-origin:50% 50%;">' +
+          '<div style="position:absolute;top:0;left:0;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle, rgba(43,125,233,0.35) 0%, rgba(43,125,233,0.12) 60%, rgba(43,125,233,0) 100%);"></div>' +
+          '<div style="position:absolute;top:0;left:14px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid rgba(43,125,233,0.9);"></div>' +
+          '<div style="position:absolute;top:14px;left:14px;width:16px;height:16px;border-radius:8px;background:#2b7de9;border:3px solid white;box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>' +
+        '</div>';
+    }
 
     function postToApp(message) {
       if (window.ReactNativeWebView) {
@@ -53,8 +63,8 @@
           position: position,
           map: map,
           icon: {
-            content: '<div style="width:16px;height:16px;border-radius:8px;background:#2b7de9;border:3px solid white;box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>',
-            anchor: new naver.maps.Point(8, 8)
+            content: myLocationIconHtml(currentHeading),
+            anchor: new naver.maps.Point(22, 22)
           },
           zIndex: 100
         });
@@ -63,6 +73,16 @@
       if (!hasCenteredOnMyLocation) {
         hasCenteredOnMyLocation = true;
         map.setCenter(position);
+      }
+    }
+
+    function renderHeading(heading) {
+      currentHeading = heading;
+      if (myLocationMarker) {
+        myLocationMarker.setIcon({
+          content: myLocationIconHtml(currentHeading),
+          anchor: new naver.maps.Point(22, 22)
+        });
       }
     }
 
@@ -88,6 +108,8 @@
           renderBuildings(data.buildings);
         } else if (data.type === 'location') {
           renderMyLocation(data);
+        } else if (data.type === 'heading') {
+          renderHeading(data.heading);
         } else if (data.type === 'centerOnLocation') {
           map.setCenter(new naver.maps.LatLng(data.lat, data.lng));
         } else if (data.type === 'route') {
