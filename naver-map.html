@@ -22,27 +22,6 @@
     var routePolyline = null;
     var hasCenteredOnMyLocation = false;
 
-    var PICTOGRAM_BASE = 'https://qktkska-oss.github.io/everyroad-map-assets/pictograms/';
-    var buildingIcons = {
-      '학생회관': '학생회관.png',
-      '유학생기숙사': '유학생기숙사.png',
-      '국제교육센터': '국제교육센터.png',
-      '학군단': '학군단.png',
-      '철도 물류관': '철도물류관.png',
-      '도서관': '도서관.png',
-      '보건의료과학관': '보건의료과학관.png',
-      '교양교육관': '교양교육관.png',
-      '우송유치원': '우송유치원.png',
-      '사회복지 융합관': '사회복지융합관.png',
-      '우송예술회관': '우송예술회관.png',
-      '미디어융합관': '미디어융합관.png',
-      '우송타워': '우송타워.png',
-      '식품건축관': '식품건축관.png',
-      '우송대학교 서문': '우송대학교서문.png',
-      '우송대학교 동문': '우송대학교서문.png',
-      '우송대학교 북문': '우송대학교서문.png'
-    };
-
     function postToApp(message) {
       if (window.ReactNativeWebView) {
         window.ReactNativeWebView.postMessage(JSON.stringify(message));
@@ -53,21 +32,11 @@
       buildingMarkers.forEach(function (m) { m.setMap(null); });
       buildingMarkers = [];
       buildings.forEach(function (b) {
-        var iconFile = buildingIcons[b.name];
-        var markerOptions = {
+        var marker = new naver.maps.Marker({
           position: new naver.maps.LatLng(b.lat, b.lng),
           map: map,
           title: b.name
-        };
-        if (iconFile) {
-          markerOptions.icon = {
-            url: PICTOGRAM_BASE + encodeURIComponent(iconFile),
-            size: new naver.maps.Size(40, 40),
-            scaledSize: new naver.maps.Size(40, 40),
-            anchor: new naver.maps.Point(20, 40)
-          };
-        }
-        var marker = new naver.maps.Marker(markerOptions);
+        });
         naver.maps.Event.addListener(marker, 'click', function () {
           postToApp({ type: 'buildingClick', building: b });
         });
