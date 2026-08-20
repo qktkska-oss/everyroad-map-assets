@@ -26,7 +26,8 @@
     var isDarkMode = false;
     var DARK_FILTER = 'invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.92)';
     var lastBuildings = [];
-    var BUILDING_ICON_SIZE = 20; // 건물 픽토그램 고정 크기(px)
+    var BUILDING_PIN_SIZE = 30; // 핀 전체 크기(px, 정사각형 캔버스)
+    var PIN_COLOR = '#2b7de9';
 
     var PICTOGRAM_BASE = 'https://qktkska-oss.github.io/everyroad-map-assets/pictograms/';
     var buildingIcons = {
@@ -49,17 +50,28 @@
       '우송대학교 북문': '우송대학교서문.png'
     };
 
+    // 클래식한 지도 핀(위는 둥글고 아래는 뾰족한 물방울 모양) 안에 픽토그램을 원형 배지로 넣는다.
+    // 좌표 기준은 viewBox 0 0 24 24: 핀 꼭짓점은 대략 (12, 22).
     function buildingPinIconHtml(iconFile) {
-      var s = BUILDING_ICON_SIZE;
+      var s = BUILDING_PIN_SIZE;
+      var iconUrl = PICTOGRAM_BASE + encodeURIComponent(iconFile);
+      var clipId = 'pinClip' + Math.random().toString(36).slice(2);
       return '' +
-        '<img src="' + PICTOGRAM_BASE + encodeURIComponent(iconFile) + '" ' +
-          'style="width:' + s + 'px;height:' + s + 'px;' +
-          'border-radius:50%;border:2px solid #ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.35);" />';
+        '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" ' +
+          'xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+          '<defs><clipPath id="' + clipId + '"><circle cx="12" cy="9" r="5.4"/></clipPath></defs>' +
+          '<path d="M12 1.5C7.86 1.5 4.5 4.86 4.5 9c0 5.8 7.5 13.5 7.5 13.5S19.5 14.8 19.5 9C19.5 4.86 16.14 1.5 12 1.5Z" ' +
+            'fill="' + PIN_COLOR + '" stroke="#ffffff" stroke-width="1.2"/>' +
+          '<circle cx="12" cy="9" r="6.2" fill="#ffffff"/>' +
+          '<image href="' + iconUrl + '" xlink:href="' + iconUrl + '" ' +
+            'x="5.2" y="2.2" width="13.6" height="13.6" ' +
+            'clip-path="url(#' + clipId + ')" preserveAspectRatio="xMidYMid slice" />' +
+        '</svg>';
     }
 
     function buildingMarkerAnchor() {
-      var s = BUILDING_ICON_SIZE;
-      return new naver.maps.Point(s / 2, s / 2);
+      var s = BUILDING_PIN_SIZE;
+      return new naver.maps.Point(s / 2, Math.round(s * 22 / 24));
     }
 
     function myLocationIconHtml(heading) {
