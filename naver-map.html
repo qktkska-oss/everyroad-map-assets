@@ -27,7 +27,7 @@
     var DARK_FILTER = 'invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.92)';
     var lastBuildings = [];
     var BASE_ZOOM = 17;
-    var BASE_CIRCLE_SIZE = 44; // 기준 줌(17)에서의 원형 아이콘 지름(px)
+    var BASE_CIRCLE_SIZE = 32; // 기준 줌(17)에서의 원형 아이콘 지름(px)
 
     var PICTOGRAM_BASE = 'https://qktkska-oss.github.io/everyroad-map-assets/pictograms/';
     var buildingIcons = {
@@ -51,10 +51,10 @@
     };
 
     function currentIconScale() {
-      // 줌 레벨에 따라 0.6~1.6배 사이에서 아이콘 크기를 조절한다.
+      // 줌 레벨 한 칸당 25%씩 커지고 작아지도록 지수적으로 계산 (지도 축소 시 확실히 작아지게).
       var zoom = map.getZoom();
-      var scale = zoom / BASE_ZOOM;
-      if (scale < 0.6) scale = 0.6;
+      var scale = Math.pow(1.25, zoom - BASE_ZOOM);
+      if (scale < 0.28) scale = 0.28;
       if (scale > 1.6) scale = 1.6;
       return scale;
     }
@@ -197,9 +197,16 @@
     }
 
     // 지도를 확대/축소할 때마다 건물 픽토그램 크기를 같이 조절한다.
-    naver.maps.Event.addListener(map, 'zoom_changed', function () {
+    // (zoom_changed 하나만 걸면 SDK/버전에 따라 안 잡히는 경우가 있어 idle까지 이중으로 건다)
+    var lastAppliedZoom = null;
+    function handleZoomMaybeChanged() {
+      var zoom = map.getZoom();
+      if (zoom === lastAppliedZoom) return;
+      lastAppliedZoom = zoom;
       refreshBuildingIconSizes();
-    });
+    }
+    naver.maps.Event.addListener(map, 'zoom_changed', handleZoomMaybeChanged);
+    naver.maps.Event.addListener(map, 'idle', handleZoomMaybeChanged);
 
     function handleMessage(event) {
       try {
