@@ -25,6 +25,63 @@
     var currentHeading = 0;
     var isDarkMode = false;
     var DARK_FILTER = 'invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.92)';
+    var lastBuildings = [];
+    var BASE_ZOOM = 17;
+    var BASE_CIRCLE_SIZE = 44; // 기준 줌(17)에서의 원형 아이콘 지름(px)
+
+    var PICTOGRAM_BASE = 'https://qktkska-oss.github.io/everyroad-map-assets/pictograms/';
+    var buildingIcons = {
+      '학생회관': '학생회관.png',
+      '유학생기숙사': '유학생기숙사.png',
+      '국제교육센터': '국제교육센터.png',
+      '학군단': '학군단.png',
+      '철도 물류관': '철도물류관.png',
+      '도서관': '도서관.png',
+      '보건의료과학관': '보건의료과학관.png',
+      '교양교육관': '교양교육관.png',
+      '우송유치원': '우송유치원.png',
+      '사회복지 융합관': '사회복지융합관.png',
+      '우송예술회관': '우송예술회관.png',
+      '미디어융합관': '미디어융합관.png',
+      '우송타워': '우송타워.png',
+      '식품건축관': '식품건축관.png',
+      '우송대학교 서문': '우송대학교서문.png',
+      '우송대학교 동문': '우송대학교서문.png',
+      '우송대학교 북문': '우송대학교서문.png'
+    };
+
+    function currentIconScale() {
+      // 줌 레벨에 따라 0.6~1.6배 사이에서 아이콘 크기를 조절한다.
+      var zoom = map.getZoom();
+      var scale = zoom / BASE_ZOOM;
+      if (scale < 0.6) scale = 0.6;
+      if (scale > 1.6) scale = 1.6;
+      return scale;
+    }
+
+    function buildingPinIconHtml(iconFile) {
+      var scale = currentIconScale();
+      var circleSize = Math.round(BASE_CIRCLE_SIZE * scale);
+      var tailHeight = Math.round(circleSize * 0.24);
+      var tailWidth = Math.round(circleSize * 0.16);
+      var totalHeight = circleSize + tailHeight;
+      return '' +
+        '<div style="position:relative;width:' + circleSize + 'px;height:' + totalHeight + 'px;">' +
+          '<img src="' + PICTOGRAM_BASE + encodeURIComponent(iconFile) + '" ' +
+            'style="position:absolute;top:0;left:0;width:' + circleSize + 'px;height:' + circleSize + 'px;' +
+            'border-radius:50%;border:2px solid #ffffff;box-shadow:0 2px 5px rgba(0,0,0,0.35);" />' +
+          '<div style="position:absolute;top:' + (circleSize - 2) + 'px;left:' + (circleSize / 2 - tailWidth / 2) + 'px;' +
+            'width:0;height:0;border-left:' + (tailWidth / 2) + 'px solid transparent;border-right:' + (tailWidth / 2) + 'px solid transparent;' +
+            'border-top:' + tailHeight + 'px solid #ffffff;filter:drop-shadow(0 2px 2px rgba(0,0,0,0.3));"></div>' +
+        '</div>';
+    }
+
+    function buildingMarkerAnchor(iconFile) {
+      var scale = currentIconScale();
+      var circleSize = Math.round(BASE_CIRCLE_SIZE * scale);
+      var tailHeight = Math.round(circleSize * 0.24);
+      return new naver.maps.Point(circleSize / 2, circleSize + tailHeight);
+    }
 
     function myLocationIconHtml(heading) {
       // 다크모드일 때 지도 전체에 걸린 반전 필터를 이 마커 안에서만 되돌려서
@@ -45,18 +102,37 @@
     }
 
     function renderBuildings(buildings) {
-      buildingMarkers.forEach(function (m) { m.setMap(null); });
+      lastBuildings = buildings || [];
+      buildingMarkers.forEach(function (m) { m.marker.setMap(null); });
       buildingMarkers = [];
-      buildings.forEach(function (b) {
-        var marker = new naver.maps.Marker({
+      lastBuildings.forEach(function (b) {
+        var iconFile = buildingIcons[b.name];
+        var markerOptions = {
           position: new naver.maps.LatLng(b.lat, b.lng),
           map: map,
           title: b.name
-        });
+        };
+        if (iconFile) {
+          markerOptions.icon = {
+            content: buildingPinIconHtml(iconFile),
+            anchor: buildingMarkerAnchor(iconFile)
+          };
+        }
+        var marker = new naver.maps.Marker(markerOptions);
         naver.maps.Event.addListener(marker, 'click', function () {
           postToApp({ type: 'buildingClick', building: b });
         });
-        buildingMarkers.push(marker);
+        buildingMarkers.push({ marker: marker, iconFile: iconFile });
+      });
+    }
+
+    function refreshBuildingIconSizes() {
+      buildingMarkers.forEach(function (entry) {
+        if (!entry.iconFile) return;
+        entry.marker.setIcon({
+          content: buildingPinIconHtml(entry.iconFile),
+          anchor: buildingMarkerAnchor(entry.iconFile)
+        });
       });
     }
 
@@ -119,6 +195,11 @@
         strokeOpacity: 0.9
       });
     }
+
+    // 지도를 확대/축소할 때마다 건물 픽토그램 크기를 같이 조절한다.
+    naver.maps.Event.addListener(map, 'zoom_changed', function () {
+      refreshBuildingIconSizes();
+    });
 
     function handleMessage(event) {
       try {
