@@ -26,8 +26,7 @@
     var isDarkMode = false;
     var DARK_FILTER = 'invert(100%) hue-rotate(180deg) brightness(0.95) contrast(0.92)';
     var lastBuildings = [];
-    var BASE_ZOOM = 17;
-    var BASE_CIRCLE_SIZE = 32; // 기준 줌(17)에서의 원형 아이콘 지름(px)
+    var BUILDING_ICON_SIZE = 20; // 건물 픽토그램 고정 크기(px)
 
     var PICTOGRAM_BASE = 'https://qktkska-oss.github.io/everyroad-map-assets/pictograms/';
     var buildingIcons = {
@@ -50,37 +49,17 @@
       '우송대학교 북문': '우송대학교서문.png'
     };
 
-    function currentIconScale() {
-      // 줌 레벨 한 칸당 25%씩 커지고 작아지도록 지수적으로 계산 (지도 축소 시 확실히 작아지게).
-      var zoom = map.getZoom();
-      var scale = Math.pow(1.25, zoom - BASE_ZOOM);
-      if (scale < 0.28) scale = 0.28;
-      if (scale > 1.6) scale = 1.6;
-      return scale;
-    }
-
     function buildingPinIconHtml(iconFile) {
-      var scale = currentIconScale();
-      var circleSize = Math.round(BASE_CIRCLE_SIZE * scale);
-      var tailHeight = Math.round(circleSize * 0.24);
-      var tailWidth = Math.round(circleSize * 0.16);
-      var totalHeight = circleSize + tailHeight;
+      var s = BUILDING_ICON_SIZE;
       return '' +
-        '<div style="position:relative;width:' + circleSize + 'px;height:' + totalHeight + 'px;">' +
-          '<img src="' + PICTOGRAM_BASE + encodeURIComponent(iconFile) + '" ' +
-            'style="position:absolute;top:0;left:0;width:' + circleSize + 'px;height:' + circleSize + 'px;' +
-            'border-radius:50%;border:2px solid #ffffff;box-shadow:0 2px 5px rgba(0,0,0,0.35);" />' +
-          '<div style="position:absolute;top:' + (circleSize - 2) + 'px;left:' + (circleSize / 2 - tailWidth / 2) + 'px;' +
-            'width:0;height:0;border-left:' + (tailWidth / 2) + 'px solid transparent;border-right:' + (tailWidth / 2) + 'px solid transparent;' +
-            'border-top:' + tailHeight + 'px solid #ffffff;filter:drop-shadow(0 2px 2px rgba(0,0,0,0.3));"></div>' +
-        '</div>';
+        '<img src="' + PICTOGRAM_BASE + encodeURIComponent(iconFile) + '" ' +
+          'style="width:' + s + 'px;height:' + s + 'px;' +
+          'border-radius:50%;border:2px solid #ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.35);" />';
     }
 
-    function buildingMarkerAnchor(iconFile) {
-      var scale = currentIconScale();
-      var circleSize = Math.round(BASE_CIRCLE_SIZE * scale);
-      var tailHeight = Math.round(circleSize * 0.24);
-      return new naver.maps.Point(circleSize / 2, circleSize + tailHeight);
+    function buildingMarkerAnchor() {
+      var s = BUILDING_ICON_SIZE;
+      return new naver.maps.Point(s / 2, s / 2);
     }
 
     function myLocationIconHtml(heading) {
@@ -123,16 +102,6 @@
           postToApp({ type: 'buildingClick', building: b });
         });
         buildingMarkers.push({ marker: marker, iconFile: iconFile });
-      });
-    }
-
-    function refreshBuildingIconSizes() {
-      buildingMarkers.forEach(function (entry) {
-        if (!entry.iconFile) return;
-        entry.marker.setIcon({
-          content: buildingPinIconHtml(entry.iconFile),
-          anchor: buildingMarkerAnchor(entry.iconFile)
-        });
       });
     }
 
@@ -195,18 +164,6 @@
         strokeOpacity: 0.9
       });
     }
-
-    // 지도를 확대/축소할 때마다 건물 픽토그램 크기를 같이 조절한다.
-    // (zoom_changed 하나만 걸면 SDK/버전에 따라 안 잡히는 경우가 있어 idle까지 이중으로 건다)
-    var lastAppliedZoom = null;
-    function handleZoomMaybeChanged() {
-      var zoom = map.getZoom();
-      if (zoom === lastAppliedZoom) return;
-      lastAppliedZoom = zoom;
-      refreshBuildingIconSizes();
-    }
-    naver.maps.Event.addListener(map, 'zoom_changed', handleZoomMaybeChanged);
-    naver.maps.Event.addListener(map, 'idle', handleZoomMaybeChanged);
 
     function handleMessage(event) {
       try {
